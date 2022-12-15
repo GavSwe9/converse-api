@@ -4,19 +4,19 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/dynamodb"
-    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
-    "fmt"
-	"os"
-    "log"
 	"context"
+	"fmt"
+	"log"
+	"os"
 )
 
 type ConnectionKey struct {
-    ConnectionId	string	`json:"connectionId"`
+	ConnectionId string `json:"connectionId"`
 }
 
 type Response events.APIGatewayProxyResponse
@@ -26,9 +26,9 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
-	
+
 	svc := dynamodb.New(sess)
-	
+
 	key, err := dynamodbattribute.MarshalMap(ConnectionKey{
 		request.RequestContext.ConnectionID,
 	})
@@ -39,8 +39,8 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 	tableName := os.Getenv("CONNECTIONS_TABLE")
 
 	input := &dynamodb.DeleteItemInput{
-		Key:      	key,
-		TableName: 	aws.String(tableName),
+		Key:       key,
+		TableName: aws.String(tableName),
 	}
 
 	_, err = svc.DeleteItem(input)
@@ -54,7 +54,7 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 		StatusCode:      200,
 		IsBase64Encoded: false,
 		Headers: map[string]string{
-			"Content-Type":           "application/json",
+			"Content-Type": "application/json",
 		},
 	}
 	fmt.Println(resp)

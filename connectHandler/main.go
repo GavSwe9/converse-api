@@ -4,21 +4,21 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/dynamodb"
-    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
-    "fmt"
-	"os"
-    "log"
 	"context"
+	"fmt"
+	"log"
+	"os"
 )
 
 type ConnectionItem struct {
-    ConnectionId	string	`json:"connectionId"`
-    UserName		string	`json:"userName"`
-    GroupId			int		`json:"groupId"`
+	ConnectionId string `json:"connectionId"`
+	UserName     string `json:"userName"`
+	GroupId      int    `json:"groupId"`
 }
 
 type Response events.APIGatewayProxyResponse
@@ -28,15 +28,15 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
-	
+
 	svc := dynamodb.New(sess)
-	
+
 	item := ConnectionItem{
-		ConnectionId:	request.RequestContext.ConnectionID,
-		UserName:		"Gavin.Sweeney",
-		GroupId:  		1,
+		ConnectionId: request.RequestContext.ConnectionID,
+		UserName:     "Gavin.Sweeney",
+		GroupId:      1,
 	}
-	
+
 	dynamoItem, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
 		log.Fatalf("Error marshalling new connection item: %s", err)
@@ -60,7 +60,7 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 		StatusCode:      200,
 		IsBase64Encoded: false,
 		Headers: map[string]string{
-			"Content-Type":           "application/json",
+			"Content-Type": "application/json",
 		},
 	}
 	fmt.Println(resp)
