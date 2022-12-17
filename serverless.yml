@@ -27,6 +27,8 @@ provider:
   environment:
     CONNECTIONS_TABLE:
       Ref: ConnectionsTable
+    MESSAGES_TABLE:
+      Ref: MessagesTable
 
 # you can overwrite defaults here
   stage: dev
@@ -59,6 +61,13 @@ provider:
         Fn::GetAtt:
           - ConnectionsTable
           - Arn
+    - Effect: Allow
+      Action: 
+        - dynamodb:PutItem
+      Resource:
+        Fn::GetAtt:
+          - MessagesTable
+          - Arn
 
 package:
   patterns:
@@ -76,6 +85,10 @@ functions:
     events:
       - websocket:
           route: $disconnect
+  messageHandler:
+    handler: bin/messageHandler
+    events:
+      - websocket: sendMessage
   # defaultHandler:
   #   handler: bin/hello
   #   events:
@@ -147,6 +160,22 @@ resources:
         KeySchema:
           - AttributeName: connectionId
             KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: groupId
+            AttributeType: N
+          - AttributeName: userName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: groupId
+            KeyType: HASH
+          - AttributeName: userName
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

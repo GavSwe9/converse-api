@@ -83,6 +83,12 @@
         "LogGroupName": "/aws/lambda/converse-dev-disconnectHandler"
       }
     },
+    "MessageHandlerLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/converse-dev-messageHandler"
+      }
+    },
     "IamRoleLambdaExecution": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -156,6 +162,18 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "dynamodb:PutItem"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MessagesTable",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "execute-api:ManageConnections"
                   ],
                   "Resource": [
@@ -191,7 +209,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/converse/dev/1670829241432-2022-12-12T07:14:01.432Z/converse.zip"
+          "S3Key": "serverless/converse/dev/1671248457735-2022-12-17T03:40:57.735Z/converse.zip"
         },
         "Handler": "bin/connectHandler",
         "Runtime": "go1.x",
@@ -202,6 +220,9 @@
           "Variables": {
             "CONNECTIONS_TABLE": {
               "Ref": "ConnectionsTable"
+            },
+            "MESSAGES_TABLE": {
+              "Ref": "MessagesTable"
             }
           }
         },
@@ -223,7 +244,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/converse/dev/1670829241432-2022-12-12T07:14:01.432Z/converse.zip"
+          "S3Key": "serverless/converse/dev/1671248457735-2022-12-17T03:40:57.735Z/converse.zip"
         },
         "Handler": "bin/disconnectHandler",
         "Runtime": "go1.x",
@@ -234,6 +255,9 @@
           "Variables": {
             "CONNECTIONS_TABLE": {
               "Ref": "ConnectionsTable"
+            },
+            "MESSAGES_TABLE": {
+              "Ref": "MessagesTable"
             }
           }
         },
@@ -248,24 +272,69 @@
         "DisconnectHandlerLogGroup"
       ]
     },
-    "ConnectHandlerLambdaVersionf7GtNm9dVdvFTbO9DrqzOoXLd2vsu0oi830fm974k": {
+    "MessageHandlerLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/converse/dev/1671248457735-2022-12-17T03:40:57.735Z/converse.zip"
+        },
+        "Handler": "bin/messageHandler",
+        "Runtime": "go1.x",
+        "FunctionName": "converse-dev-messageHandler",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "CONNECTIONS_TABLE": {
+              "Ref": "ConnectionsTable"
+            },
+            "MESSAGES_TABLE": {
+              "Ref": "MessagesTable"
+            }
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "MessageHandlerLogGroup"
+      ]
+    },
+    "ConnectHandlerLambdaVersionnY6nwd99v8dnA8Fu945JmbpLlX3B3F69vbN7imPQk": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ConnectHandlerLambdaFunction"
         },
-        "CodeSha256": "z5qdW7TS75pfd9Q/uK2VhxILrLFWjho/A1/uX+RNhXE="
+        "CodeSha256": "4lK3lo2kR/q4LV5Rfy9jb6Zq5zRojN7Rh7jRx3j9iic="
       }
     },
-    "DisconnectHandlerLambdaVersione7AdG8QC4zro5bTk5fO5tcpmAkKuwrEdpZsOOyeI": {
+    "DisconnectHandlerLambdaVersionDVnNLTXmuuPQQ1B26T0S1i7wLukEIuArybAuxTEx8": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "DisconnectHandlerLambdaFunction"
         },
-        "CodeSha256": "z5qdW7TS75pfd9Q/uK2VhxILrLFWjho/A1/uX+RNhXE="
+        "CodeSha256": "4lK3lo2kR/q4LV5Rfy9jb6Zq5zRojN7Rh7jRx3j9iic="
+      }
+    },
+    "MessageHandlerLambdaVersionBGVFHvRe8xA38breUJYR5y5xQEnrudOLar3d5sZxCE": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "MessageHandlerLambdaFunction"
+        },
+        "CodeSha256": "4lK3lo2kR/q4LV5Rfy9jb6Zq5zRojN7Rh7jRx3j9iic="
       }
     },
     "WebsocketsApi": {
@@ -341,6 +410,38 @@
         }
       }
     },
+    "MessageHandlerWebsocketsIntegration": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "WebsocketsApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":apigateway:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":lambda:path/2015-03-31/functions/",
+              {
+                "Fn::GetAtt": [
+                  "MessageHandlerLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "/invocations"
+            ]
+          ]
+        }
+      }
+    },
     "ConnectHandlerLambdaPermissionWebsockets": {
       "Type": "AWS::Lambda::Permission",
       "DependsOn": [
@@ -368,6 +469,23 @@
         "FunctionName": {
           "Fn::GetAtt": [
             "DisconnectHandlerLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com"
+      }
+    },
+    "MessageHandlerLambdaPermissionWebsockets": {
+      "Type": "AWS::Lambda::Permission",
+      "DependsOn": [
+        "WebsocketsApi",
+        "MessageHandlerLambdaFunction"
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "MessageHandlerLambdaFunction",
             "Arn"
           ]
         },
@@ -417,6 +535,27 @@
         }
       }
     },
+    "sendMessageWebsocketsRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "WebsocketsApi"
+        },
+        "RouteKey": "sendMessage",
+        "AuthorizationType": "NONE",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "MessageHandlerWebsocketsIntegration"
+              }
+            ]
+          ]
+        }
+      }
+    },
     "WebsocketsDeploymentStage": {
       "Type": "AWS::ApiGatewayV2::Stage",
       "Properties": {
@@ -426,15 +565,16 @@
         "StageName": "dev",
         "Description": "Serverless Websockets",
         "DeploymentId": {
-          "Ref": "WebsocketsDeploymentCEcco6DNfvNEsL1DU8hp3tDH06puIlauaa7nlJ8otTA"
+          "Ref": "WebsocketsDeployment9j02FfFQfodbdWSDAEQbeOq4A2DEXELvKEg5RCXaGak"
         }
       }
     },
-    "WebsocketsDeploymentCEcco6DNfvNEsL1DU8hp3tDH06puIlauaa7nlJ8otTA": {
+    "WebsocketsDeployment9j02FfFQfodbdWSDAEQbeOq4A2DEXELvKEg5RCXaGak": {
       "Type": "AWS::ApiGatewayV2::Deployment",
       "DependsOn": [
         "SconnectWebsocketsRoute",
-        "SdisconnectWebsocketsRoute"
+        "SdisconnectWebsocketsRoute",
+        "sendMessageWebsocketsRoute"
       ],
       "Properties": {
         "ApiId": {
@@ -463,6 +603,35 @@
           "WriteCapacityUnits": 1
         }
       }
+    },
+    "MessagesTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "groupId",
+            "AttributeType": "N"
+          },
+          {
+            "AttributeName": "userName",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "groupId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "userName",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      }
     }
   },
   "Outputs": {
@@ -477,7 +646,7 @@
     "ConnectHandlerLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ConnectHandlerLambdaVersionf7GtNm9dVdvFTbO9DrqzOoXLd2vsu0oi830fm974k"
+        "Ref": "ConnectHandlerLambdaVersionnY6nwd99v8dnA8Fu945JmbpLlX3B3F69vbN7imPQk"
       },
       "Export": {
         "Name": "sls-converse-dev-ConnectHandlerLambdaFunctionQualifiedArn"
@@ -486,10 +655,19 @@
     "DisconnectHandlerLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "DisconnectHandlerLambdaVersione7AdG8QC4zro5bTk5fO5tcpmAkKuwrEdpZsOOyeI"
+        "Ref": "DisconnectHandlerLambdaVersionDVnNLTXmuuPQQ1B26T0S1i7wLukEIuArybAuxTEx8"
       },
       "Export": {
         "Name": "sls-converse-dev-DisconnectHandlerLambdaFunctionQualifiedArn"
+      }
+    },
+    "MessageHandlerLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "MessageHandlerLambdaVersionBGVFHvRe8xA38breUJYR5y5xQEnrudOLar3d5sZxCE"
+      },
+      "Export": {
+        "Name": "sls-converse-dev-MessageHandlerLambdaFunctionQualifiedArn"
       }
     },
     "ServiceEndpointWebsocket": {
