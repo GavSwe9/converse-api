@@ -44,7 +44,7 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 
 	dynamoItem, err := dynamodbattribute.MarshalMap(messageItem)
 	if err != nil {
-		log.Fatalf("Error marshalling new connection item: %s", err)
+		log.Fatalf("Error marshalling new message item: %s", err)
 	}
 
 	tableName := os.Getenv("MESSAGES_TABLE")
@@ -59,7 +59,7 @@ func Handler(ctx context.Context, request events.APIGatewayWebsocketProxyRequest
 		log.Fatalf("Error calling PutItem: %s", err)
 	}
 
-	fmt.Println("Successfully added connection to table")
+	fmt.Println("Successfully put message")
 
 	resp := Response{
 		StatusCode:      200,
